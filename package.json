@@ -1,0 +1,28 @@
+{
+  "name": "l_ai_tex",
+  "version": "1.0.0",
+  "description": "This project was created to simplify the use of latex by integrating GenAI to it. \r > [!TIP]\r > This uses your own Google AI (Gemini) API key so please get one to test it. You can get a free one from [Google Ai Studio](https://aistudio.google.com/)\r >",
+  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "client": "npm run dev --workspace=client",
+    "server": "npm run dev --workspace=server",
+    "dev": "npm run client & npm run server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/M7md-AR-H/L-Ai-tex.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/M7md-AR-H/L-Ai-tex/issues"
+  },
+  "homepage": "https://github.com/M7md-AR-H/L-Ai-tex#readme"
+}

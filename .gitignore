@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+.DS_Store
+
+# Environment Variables (CRITICAL: keep your API keys private)
+.env
+.env.local
+
+# Build outputs
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+
+# Debug logs
+npm-debug.log*
+yarn-error.log*
