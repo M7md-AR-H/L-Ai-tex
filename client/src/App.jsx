@@ -1,121 +1,119 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+// client/src/App.jsx
+import React, { useState, useRef } from 'react';
+import Editor from '@monaco-editor/react';
+// import './App.css'; // You can delete the default App.css or keep it for custom styles
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  // We start with a basic LaTeX document
+  const defaultCode = `\\documentclass{article}\n\\begin{document}\n\nHello World!\n\nThis text is not very academic.\n\n\\end{document}`;
+  
+  const [code, setCode] = useState(defaultCode);
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // The editorRef allows us to grab the highlighted text
+  const editorRef = useRef(null);
+
+  // This function is called the moment the editor loads on the screen
+  const handleEditorDidMount = (editor, monaco) => {
+    editorRef.current = editor;
+  };
+
+  // The core AI function
+  const handleAiEdit = async (instruction) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    // 1. Get the highlighted text from the editor
+    const selection = editor.getSelection();
+    const selectedText = editor.getModel().getValueInRange(selection);
+
+    if (!selectedText) {
+      alert("Please highlight some text first!");
+      return;
+    }
+
+    setIsProcessing(true);
+
+    // 2. Send the highlighted text to our new backend
+    try {
+      const response = await fetch('http://localhost:5000/api/edit-latex', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selectedText, instruction })
+      });
+
+      const data = await response.json();
+      const aiGeneratedLatex = data.result;
+
+      // 3. Replace the highlighted text with the AI's output
+      editor.executeEdits("ai-edit", [
+        {
+          range: selection,
+          text: aiGeneratedLatex,
+          forceMoveMarkers: true
+        }
+      ]);
+    } catch (error) {
+      console.error("AI API failed", error);
+      alert("Failed to reach the AI. Is your server running?");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: 'sans-serif' }}>
+      
+      {/* Top Toolbar */}
+      <div style={{ padding: '10px 20px', backgroundColor: '#343ef5', borderBottom: '1px solid #ccc', display: 'flex', gap: '10px' }}>
+        <h2>L(Ai)TEX</h2>
+        
+        {/* Our AI Trigger Buttons */}
+        <button 
+          onClick={() => handleAiEdit("Rewrite this to sound more academic and professional.")}
+          disabled={isProcessing}
+          style={{ padding: '5px 15px', cursor: 'pointer', marginLeft: 'auto' }}
         >
-          Count is {count}
+          {isProcessing ? "Processing..." : "Make Academic ✨"}
         </button>
-      </section>
+        
+        <button 
+          onClick={() => handleAiEdit("Fix any LaTeX compilation errors in this code.")}
+          disabled={isProcessing}
+          style={{ padding: '5px 15px', cursor: 'pointer' }}
+        >
+          Fix Errors 🛠️
+        </button>
+      </div>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      {/* Main Content Area */}
+      <div style={{ display: 'flex', flexGrow: 1 }}>
+        
+        {/* Editor Half */}
+        <div style={{ width: '50%', borderRight: '1px solid #ccc' }}>
+          <Editor
+            height="100%"
+            defaultLanguage="latex"
+            value={code}
+            onMount={handleEditorDidMount}
+            onChange={(value) => setCode(value)}
+            theme="vs-dark" // Looks cooler
+            options={{
+              wordWrap: "on", // Wrap long lines of text
+              minimap: { enabled: false }, // Hide the mini-map on the right to save space
+            }}
+          />
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+
+        {/* Preview Half */}
+        <div style={{ width: '50%', padding: '20px', backgroundColor: '#fafafa' }}>
+          <h3>PDF Preview (Coming Soon)</h3>
+          <p>For now, highlight text in the editor on the left and click one of the AI buttons in the top right to see it modify the code!</p>
         </div>
-      </section>
+      </div>
+      
+    </div>
+  );
+};
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
-}
-
-export default App
+export default App;
