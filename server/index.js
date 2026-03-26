@@ -3,17 +3,24 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { exec } from 'child_process';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables from .env file
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize Gemini
+// Set up directory paths for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// --- AI EDITING ENDPOINT ---
 app.post('/api/edit-latex', async (req, res) => {
   const { selectedText, instruction } = req.body;
 
@@ -21,7 +28,6 @@ app.post('/api/edit-latex', async (req, res) => {
     return res.status(400).json({ error: "No text provided" });
   }
 
-  // The Prompt: We explicitly tell the AI to ONLY return code
   const prompt = `
     You are an expert LaTeX assistant.
     The user's instruction is: "${instruction}"
@@ -33,18 +39,56 @@ app.post('/api/edit-latex', async (req, res) => {
   `;
 
   try {
-    // Using the fast flash model for quick edits
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent(prompt);
     let outputText = result.response.text();
 
-    // Safety cleanup: Sometimes models ignore instructions and add markdown anyway
     outputText = outputText.replace(/^```latex\n/i, '').replace(/\n```$/i, '');
-
     res.json({ result: outputText.trim() });
   } catch (error) {
     console.error("AI API failed", error);
     res.status(500).json({ error: "Failed to generate AI response" });
+  }
+});
+
+// --- LOCAL PDF COMPILATION ENDPOINT ---
+app.post('/api/compile', async (req, res) => {
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: "No code provided" });
+
+  // Create a unique temporary directory for this specific compilation
+  const uniqueId = Date.now().toString();
+  const tempDir = path.join(__dirname, 'temp', uniqueId);
+
+  try {
+    await fs.mkdir(tempDir, { recursive: true });
+    
+    const texPath = path.join(tempDir, 'main.tex');
+    await fs.writeFile(texPath, code);
+
+    // Run pdflatex command in the temporary directory
+    exec(`pdflatex -interaction=nonstopmode main.tex`, { cwd: tempDir }, async (error, stdout, stderr) => {
+      const pdfPath = path.join(tempDir, 'main.pdf');
+      
+      try {
+        // Check if the PDF exists (pdflatex sometimes generates a PDF even if there are minor errors)
+        await fs.access(pdfPath);
+        const pdfBuffer = await fs.readFile(pdfPath);
+
+        // Send the PDF back to the client
+        res.contentType("application/pdf");
+        res.send(pdfBuffer);
+      } catch (pdfError) {
+        console.error("PDF generation failed:", stdout);
+        res.status(500).json({ error: "Compilation failed. Check your LaTeX syntax.", details: stdout });
+      } finally {
+        // Always clean up the temp folder afterward to save space
+        await fs.rm(tempDir, { recursive: true, force: true });
+      }
+    });
+  } catch (err) {
+    console.error("Server error during compilation:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

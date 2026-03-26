@@ -7,7 +7,7 @@ This project was created to simplify the use of latex by integrating GenAI to it
 ## Setup
 To install the dependecies, run this command at root:
 ``` bash
-npm install
+npm run install-all
 ```
 To start the client, run this command at root: 
 ```bash

@@ -5,6 +5,7 @@
   "main": "index.js",
   "private": true,
   "scripts": {
+    "install-all": "cd client && npm install && cd .. && cd server && npm install && cd ..",
     "client": "cd client && npm run dev",
     "server": "cd server && node index.js",
     "dev": "npm run client & npm run server"
