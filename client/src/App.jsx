@@ -5,6 +5,7 @@ import { saveAs } from 'file-saver';
 import { Upload, Download, Sparkles, FileCode2, Play, Send } from 'lucide-react';
 
 const App = () => {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const defaultCode = `\\documentclass{article}\n\\begin{document}\n\nHello World!\n\nThis text is not very academic.\n\n\\end{document}`;
   
   const [code, setCode] = useState(defaultCode);
@@ -24,7 +25,7 @@ const App = () => {
   const handleCompile = async () => {
     setIsCompiling(true);
     try {
-      const response = await fetch('http://localhost:5000/api/compile', {
+      const response = await fetch(`${API_BASE_URL}/api/compile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code })
