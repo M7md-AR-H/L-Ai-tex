@@ -63,7 +63,7 @@ const App = () => {
     setIsProcessing(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/edit-latex', {
+      const response = await fetch(`${API_BASE_URL}/api/edit-latex`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ selectedText, instruction: aiPrompt }) // Sending the custom prompt
