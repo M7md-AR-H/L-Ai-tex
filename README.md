@@ -1,8 +1,11 @@
 # L(Ai)tex Editor
 This project was created to simplify the use of latex by integrating GenAI to it. 
 > [!TIP]
-> This uses your own Google AI (Gemini) API key so please get one to test it. You can get a free one from [Google Ai Studio](https://aistudio.google.com/)
->
+> This uses your own Google AI (Gemini) API key so please get one to test it. You can get a free one from [Google Ai Studio](https://aistudio.google.com/).
+>>Check the `.env.example` file (delete ".example" from it) and add your api key there.
+
+>[!Warning]
+>DO NOT COMMIT THE `.env.example` file with your api key written on it. You must always make it your priority to secure your api keys. 
 
 ## Setup
 To install the dependecies, run this command at root:

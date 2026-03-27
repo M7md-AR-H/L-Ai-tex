@@ -1,4 +1,3 @@
-// server/index.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -14,13 +13,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Set up directory paths for ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// --- AI EDITING ENDPOINT ---
 app.post('/api/edit-latex', async (req, res) => {
   const { selectedText, instruction } = req.body;
 
@@ -51,12 +48,10 @@ app.post('/api/edit-latex', async (req, res) => {
   }
 });
 
-// --- LOCAL PDF COMPILATION ENDPOINT ---
 app.post('/api/compile', async (req, res) => {
   const { code } = req.body;
   if (!code) return res.status(400).json({ error: "No code provided" });
 
-  // Create a unique temporary directory for this specific compilation
   const uniqueId = Date.now().toString();
   const tempDir = path.join(__dirname, 'temp', uniqueId);
 
@@ -66,23 +61,19 @@ app.post('/api/compile', async (req, res) => {
     const texPath = path.join(tempDir, 'main.tex');
     await fs.writeFile(texPath, code);
 
-    // Run pdflatex command in the temporary directory
     exec(`pdflatex -interaction=nonstopmode main.tex`, { cwd: tempDir }, async (error, stdout, stderr) => {
       const pdfPath = path.join(tempDir, 'main.pdf');
       
       try {
-        // Check if the PDF exists (pdflatex sometimes generates a PDF even if there are minor errors)
         await fs.access(pdfPath);
         const pdfBuffer = await fs.readFile(pdfPath);
 
-        // Send the PDF back to the client
         res.contentType("application/pdf");
         res.send(pdfBuffer);
       } catch (pdfError) {
         console.error("PDF generation failed:", stdout);
         res.status(500).json({ error: "Compilation failed. Check your LaTeX syntax.", details: stdout });
       } finally {
-        // Always clean up the temp folder afterward to save space
         await fs.rm(tempDir, { recursive: true, force: true });
       }
     });

@@ -1,4 +1,3 @@
-// client/src/App.jsx
 import React, { useState, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import JSZip from 'jszip';
@@ -22,7 +21,6 @@ const App = () => {
     editorRef.current = editor;
   };
 
-  // --- LOCAL PDF COMPILATION LOGIC ---
   const handleCompile = async () => {
     setIsCompiling(true);
     try {
@@ -47,7 +45,6 @@ const App = () => {
     }
   };
 
-  // --- AI LOGIC (Updated for Custom Prompts) ---
   const handleAiSubmit = async () => {
     if (!aiPrompt.trim()) return;
     
@@ -81,7 +78,7 @@ const App = () => {
         }
       ]);
       
-      setAiPrompt(""); // Clear the input after successful edit
+      setAiPrompt(""); 
     } catch (error) {
       console.error("AI API failed", error);
       alert("Failed to reach the AI. Is your server running?");
@@ -90,7 +87,6 @@ const App = () => {
     }
   };
 
-  // --- ZIP IMPORT LOGIC ---
   const handleImportZip = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -115,7 +111,6 @@ const App = () => {
     }
   };
 
-  // --- ZIP EXPORT LOGIC ---
   const handleExportZip = async () => {
     try {
       const zip = new JSZip();
@@ -128,7 +123,6 @@ const App = () => {
     }
   };
 
-  // --- UI COMPONENTS ---
   const TopBarButton = ({ onClick, icon: Icon, text, primary, disabled, highlight }) => (
     <button
       onClick={onClick}
@@ -159,7 +153,6 @@ const App = () => {
       
       <input type="file" accept=".zip" ref={fileInputRef} onChange={handleImportZip} style={{ display: 'none' }} />
 
-      {/* Top Navbar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', backgroundColor: '#181825', color: '#ffffff', borderBottom: '1px solid #313244' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <FileCode2 size={24} color="#4f46e5" />
@@ -174,13 +167,10 @@ const App = () => {
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div style={{ display: 'flex', flexGrow: 1, height: 'calc(100vh - 60px)' }}>
         
-        {/* Left Side: AI Command Bar + Editor */}
         <div style={{ display: 'flex', flexDirection: 'column', width: '50%', height: '100%', borderRight: '1px solid #313244', backgroundColor: '#1e1e2e' }}>
           
-          {/* New AI Command Bar */}
           <div style={{ padding: '12px 16px', backgroundColor: '#181825', borderBottom: '1px solid #313244', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Sparkles size={20} color="#a6adc8" />
             <input 
@@ -222,7 +212,6 @@ const App = () => {
             </button>
           </div>
 
-          {/* Monaco Editor */}
           <div style={{ flexGrow: 1 }}>
             <Editor
               height="100%"
@@ -236,7 +225,6 @@ const App = () => {
           </div>
         </div>
 
-        {/* Right Side: Preview Pane */}
         <div style={{ width: '50%', height: '100%', backgroundColor: '#1e1e2e', display: 'flex', flexDirection: 'column' }}>
           {pdfUrl ? (
             <iframe 
