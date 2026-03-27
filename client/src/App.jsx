@@ -3,15 +3,15 @@ import React, { useState, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { Upload, Download, Sparkles, Wrench, FileCode2, Play } from 'lucide-react';
+import { Upload, Download, Sparkles, FileCode2, Play, Send } from 'lucide-react';
 
 const App = () => {
   const defaultCode = `\\documentclass{article}\n\\begin{document}\n\nHello World!\n\nThis text is not very academic.\n\n\\end{document}`;
   
   const [code, setCode] = useState(defaultCode);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState(""); // New state for custom AI instructions
   
-  // States for PDF compilation
   const [pdfUrl, setPdfUrl] = useState(null);
   const [isCompiling, setIsCompiling] = useState(false);
   
@@ -29,14 +29,11 @@ const App = () => {
       const response = await fetch('http://localhost:5000/api/compile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }) // Send code to our local backend
+        body: JSON.stringify({ code })
       });
 
       if (response.ok) {
-        // The backend sends back a raw PDF file, so we read it as a "blob"
         const blob = await response.blob();
-        
-        // Create a temporary local URL for the iframe to display
         const url = URL.createObjectURL(blob);
         setPdfUrl(url);
       } else {
@@ -50,8 +47,10 @@ const App = () => {
     }
   };
 
-  // --- AI LOGIC ---
-  const handleAiEdit = async (instruction) => {
+  // --- AI LOGIC (Updated for Custom Prompts) ---
+  const handleAiSubmit = async () => {
+    if (!aiPrompt.trim()) return;
+    
     const editor = editorRef.current;
     if (!editor) return;
 
@@ -59,7 +58,7 @@ const App = () => {
     const selectedText = editor.getModel().getValueInRange(selection);
 
     if (!selectedText) {
-      alert("Please highlight some text in the editor first!");
+      alert("Please highlight the portion of LaTeX code you want the AI to modify.");
       return;
     }
 
@@ -69,7 +68,7 @@ const App = () => {
       const response = await fetch('http://localhost:5000/api/edit-latex', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ selectedText, instruction })
+        body: JSON.stringify({ selectedText, instruction: aiPrompt }) // Sending the custom prompt
       });
 
       const data = await response.json();
@@ -81,6 +80,8 @@ const App = () => {
           forceMoveMarkers: true
         }
       ]);
+      
+      setAiPrompt(""); // Clear the input after successful edit
     } catch (error) {
       console.error("AI API failed", error);
       alert("Failed to reach the AI. Is your server running?");
@@ -168,42 +169,74 @@ const App = () => {
         <div style={{ display: 'flex', gap: '12px' }}>
           <TopBarButton onClick={() => fileInputRef.current.click()} icon={Upload} text="Import .zip" />
           <TopBarButton onClick={handleExportZip} icon={Download} text="Export .zip" />
-          
           <div style={{ width: '1px', backgroundColor: '#313244', margin: '0 8px' }} /> 
-
-          {/* New Local Compile Button */}
-          <TopBarButton 
-            onClick={handleCompile} 
-            icon={Play} 
-            text={isCompiling ? "Compiling..." : "Compile PDF"} 
-            highlight={true}
-            disabled={isCompiling}
-          />
-
-          <div style={{ width: '1px', backgroundColor: '#313244', margin: '0 8px' }} /> 
-
-          <TopBarButton onClick={() => handleAiEdit("Rewrite this to sound more academic and professional.")} icon={Sparkles} text={isProcessing ? "Processing..." : "Make Academic"} primary={true} disabled={isProcessing} />
-          <TopBarButton onClick={() => handleAiEdit("Fix any LaTeX compilation errors in this code.")} icon={Wrench} text="Fix Errors" primary={true} disabled={isProcessing} />
+          <TopBarButton onClick={handleCompile} icon={Play} text={isCompiling ? "Compiling..." : "Compile PDF"} highlight={true} disabled={isCompiling} />
         </div>
       </div>
 
       {/* Main Content Area */}
       <div style={{ display: 'flex', flexGrow: 1, height: 'calc(100vh - 60px)' }}>
         
-        {/* Editor Pane */}
-        <div style={{ width: '50%', height: '100%', borderRight: '1px solid #313244' }}>
-          <Editor
-            height="100%"
-            defaultLanguage="latex"
-            value={code}
-            onMount={handleEditorDidMount}
-            onChange={(value) => setCode(value)}
-            theme="vs-dark"
-            options={{ wordWrap: "on", minimap: { enabled: false }, fontSize: 15, padding: { top: 20 }, fontFamily: "'Fira Code', 'JetBrains Mono', monospace" }}
-          />
+        {/* Left Side: AI Command Bar + Editor */}
+        <div style={{ display: 'flex', flexDirection: 'column', width: '50%', height: '100%', borderRight: '1px solid #313244', backgroundColor: '#1e1e2e' }}>
+          
+          {/* New AI Command Bar */}
+          <div style={{ padding: '12px 16px', backgroundColor: '#181825', borderBottom: '1px solid #313244', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Sparkles size={20} color="#a6adc8" />
+            <input 
+              type="text" 
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAiSubmit(); }}
+              placeholder="Highlight code, then type an instruction (e.g. 'Convert this list to a table')..."
+              disabled={isProcessing}
+              style={{
+                flexGrow: 1,
+                backgroundColor: '#1e1e2e',
+                border: '1px solid #313244',
+                color: '#cdd6f4',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                outline: 'none',
+              }}
+            />
+            <button
+              onClick={handleAiSubmit}
+              disabled={isProcessing || !aiPrompt.trim()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 12px',
+                backgroundColor: '#4f46e5',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: (isProcessing || !aiPrompt.trim()) ? 'not-allowed' : 'pointer',
+                opacity: (isProcessing || !aiPrompt.trim()) ? 0.6 : 1,
+                transition: '0.2s'
+              }}
+            >
+              <Send size={16} />
+            </button>
+          </div>
+
+          {/* Monaco Editor */}
+          <div style={{ flexGrow: 1 }}>
+            <Editor
+              height="100%"
+              defaultLanguage="latex"
+              value={code}
+              onMount={handleEditorDidMount}
+              onChange={(value) => setCode(value)}
+              theme="vs-dark"
+              options={{ wordWrap: "on", minimap: { enabled: false }, fontSize: 15, padding: { top: 16 }, fontFamily: "'Fira Code', 'JetBrains Mono', monospace" }}
+            />
+          </div>
         </div>
 
-        {/* Preview Pane */}
+        {/* Right Side: Preview Pane */}
         <div style={{ width: '50%', height: '100%', backgroundColor: '#1e1e2e', display: 'flex', flexDirection: 'column' }}>
           {pdfUrl ? (
             <iframe 
