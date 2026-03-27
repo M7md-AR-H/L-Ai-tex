@@ -1,26 +1,25 @@
-# Use an official, lightweight Node.js image based on Debian Linux
 FROM node:18-bullseye-slim
 
-# Install LaTeX and its necessary dependencies
-# We use --no-install-recommends to keep the image size small for the Free tier
+# Install LaTeX
 RUN apt-get update && apt-get install -y \
     texlive-latex-base \
     texlive-fonts-recommended \
     texlive-latex-extra \
     && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the package.json and install Node dependencies
+# Copy package files from the current directory (server/)
 COPY package*.json ./
 RUN npm install
 
-# Copy the rest of your server code into the container
+# Copy everything else from the current directory (server/)
 COPY . .
 
-# Expose the port your app runs on
+# Explicitly check if the file exists during build (for debugging)
+RUN ls -la /app
+
 EXPOSE 5000
 
-# Start the Express server
+# Start the server
 CMD ["node", "index.js"]
