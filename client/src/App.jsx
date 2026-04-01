@@ -10,7 +10,7 @@ const App = () => {
   
   const [code, setCode] = useState(defaultCode);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState(""); // New state for custom AI instructions
+  const [aiPrompt, setAiPrompt] = useState(""); 
   
   const [pdfUrl, setPdfUrl] = useState(null);
   const [isCompiling, setIsCompiling] = useState(false);
@@ -36,7 +36,18 @@ const App = () => {
         const url = URL.createObjectURL(blob);
         setPdfUrl(url);
       } else {
-        alert("Compilation failed! There might be a syntax error in your LaTeX code.");
+        const errorData = await response.json();
+               
+        const logs = errorData.details || "";
+        const lines = logs.split('\n');
+        const latexErrorLine = lines.find(line => line.startsWith('!'));
+        
+        if (latexErrorLine) {
+          alert(`LaTeX Error:\n${latexErrorLine}\n\nCheck your packages or syntax.`);
+        } else {
+          alert("Compilation failed! Check your syntax or missing packages.");
+          console.error("Full compilation log:", logs);  
+        }
       }
     } catch (error) {
       console.error("Compile error:", error);
@@ -66,7 +77,7 @@ const App = () => {
       const response = await fetch(`${API_BASE_URL}/api/edit-latex`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ selectedText, instruction: aiPrompt }) // Sending the custom prompt
+        body: JSON.stringify({ selectedText, instruction: aiPrompt }) 
       });
 
       const data = await response.json();
